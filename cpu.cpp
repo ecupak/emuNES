@@ -280,7 +280,7 @@ word CPU::getSumAsWord(word a, word b)
 
 		// Full Adder.
 		byte sum = carry ^ (x ^ y);
-		carry = (x & y) + (y & carry) + (x & carry);
+		carry = (x & y) | (y & carry) | (x & carry);
 		result |= (sum << i);
 	}
 
