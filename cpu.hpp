@@ -21,16 +21,20 @@ public:
 
 	void run();
 
-
+private:
 	/// <summary>
 	/// Bitwise addition returning a byte. Overflow does not create a word!
 	/// (i.e., 0xFF + 0x02 = 0x01)
 	/// </summary>
 	/// <param name="a">First addend.</param>
 	/// <param name="b">Second addend.</param>
-	/// <param name="use_carry">Should method use and/or alter the carry flag?</param>
+	/// <param name="use_carry">
+	/// Should method use flags? 
+	/// If true, the carry flag will be used to get and store the C-IN and C-OUT values; 
+	/// and the overflow flag will be set at the end of calculation if overflow occurred.
+	/// </param>
 	/// <returns>Sum of binary addition.</returns>
-	byte getSumAsByte(byte a, byte b, bool use_carry_flag);
+	byte addBytes(byte a, byte b, bool use_carry_flag);
 
 	/// <summary>
 	/// Bitwise addtion returning a word.
@@ -38,12 +42,33 @@ public:
 	/// <param name="a">First addend.</param>
 	/// <param name="b">Second addend.</param>
 	/// <returns>Sum of binary addition.</returns>
-	word getSumAsWord(word a, word b);
-	word getSumAsWord(word a, byte b);
-	word getSumAsWord(byte a, word b);
-	word getSumAsWord(byte a, byte b);
+	word addWords(word a, word b);
+	word addWords(word a, byte b);
+	word addWords(byte a, word b);
+	word addWords(byte a, byte b);
 
-private:
+	/// <summary>
+	/// Bitwise subtraction returning a byte.
+	/// </summary>
+	/// <param name="a">Minuend.</param>
+	/// <param name="b">Subtrahend.</param>
+	/// <param name="use_carry">
+	/// Should method use flags?
+	/// </param>
+	/// <returns>Difference of binary subtraction.</returns>
+	byte subtractBytes(byte a, byte b, bool use_carry_flag);
+
+	/// <summary>
+	/// Bitwise subtraction returning a word.
+	/// </summary>
+	/// <param name="a">Minuend.</param>
+	/// <param name="b">Subtrahend.</param>
+	/// <returns>Difference of binary subtraction.</returns>
+	word subtractWords(word a, word b);
+	word subtractWords(word a, byte b);
+	word subtractWords(byte a, word b);
+	word subtractWords(byte a, byte b);
+
 	// Processor status bit indices.
 	enum : byte {
 		C = 0,
@@ -93,6 +118,20 @@ private:
 	void doCMP(byte& data);
 	void doCMX(byte& data);
 	void doCMY(byte& data);
+	void doDEC(byte& data);
+	void doDEX();
+	void doDEY();
+	void doEOR(byte& data);
+	void doINC(byte& data);
+	void doINX();
+	void doINY();
+	void doJMP(word address);
+	void doLDA(byte& data);
+	void doLDX(byte& data);
+	void doLDY(byte& data);
+
+
+
 
 
 	/// <summary>
