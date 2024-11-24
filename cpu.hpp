@@ -21,7 +21,6 @@ public:
 
 	void run();
 
-	void setZeroAndNegativeFlags(byte data);
 
 	/// <summary>
 	/// Bitwise addition returning a byte. Overflow does not create a word!
@@ -46,14 +45,15 @@ public:
 
 private:
 	// Processor status bit indices.
-	enum {
+	enum : byte {
 		C = 0,
 		Z = 1,
 		I = 2,
-		B = 3,
+		D = 3,
+		B = 4,
 		// skip
-		V = 5,
-		N = 6,
+		V = 6,
+		N = 7,
 	};
 
 	/// <summary>
@@ -61,21 +61,47 @@ private:
 	/// </summary>
 	/// <param name="flag">Bitflag index to toggle.</param>
 	/// <param name="value">Should flag be turned on or off?</param>
-	void setFlag(byte flag_idx, bool value);	
-	
-	word getDataForJMP(const byte opcode);
-	byte getDataForINC(const byte opcode);
-	byte getDataForLDA(const byte opcode);
+	void setFlag(byte flag_idx, bool value);
+	void setZeroAndNegativeFlags(byte data);
+	bool isFlagSet(byte flag_idx) const;
 
 
 	/// <summary>
-	/// Addressing Modes.
+	/// All instructions.
 	/// </summary>
-	/// <param name="cpu"></param>
-	/// <param name="register_destination"></param>
-	byte getAddr_Immediate();
-	byte getAddr_ZeroPage();
-	byte getAddr_ZeroPageX();
+	/// <param name="data">
+	/// The data from memory to act upon.
+	/// Parameter is omitted if instruction is implied.
+	/// </param>
+	void doADC(byte& data);
+	void doAND(byte& data);
+	void doASL(byte& data);
+	void doBCC(byte& data);
+	void doBCS(byte& data);
+	void doBEQ(byte& data);
+	void doBIT(byte& data);
+	void doBMI(byte& data);
+	void doBNE(byte& data);
+	void doBPL(byte& data);
+	void doBRK();
+	void doBVC(byte& data);
+	void doBVS(byte& data);
+	void doCLC();
+	void doCLD();
+	void doCLI();
+	void doCLV();
+	void doCMP(byte& data);
+	void doCMX(byte& data);
+	void doCMY(byte& data);
+
+
+	/// <summary>
+	/// Addressing Modes. Locates the address of where the wanted data is.
+	/// </summary>	
+	/// <returns>Address of data in memory.</returns>
+	word getAddr_Immediate();
+	word getAddr_ZeroPage();
+	word getAddr_ZeroPageX();
 	word getAddr_ZeroPageY();
 	word getAddr_Absolute();
 	word getAddr_AbsoluteX();
@@ -83,6 +109,25 @@ private:
 	word getAddr_IndirectX();
 	word getAddr_IndirectY();
 	word getAddr_Indirect();
+
+
+	/// <summary>
+	/// Addressing Mode helpers. 
+	/// Fetches the data from memory to simplify instuction code.
+	/// </summary>
+	/// <returns>Reference to the data in memory.</returns>
+	byte& get_Immediate();
+	byte& get_ZeroPage();
+	byte& get_ZeroPageX();
+	byte& get_ZeroPageY();
+	byte& get_Absolute();
+	byte& get_AbsoluteX();
+	byte& get_AbsoluteY();
+	byte& get_IndirectX();
+	byte& get_IndirectY();
+	byte& get_Indirect();
+	byte& get_Accumulator();
+
 
 	// Properties.
 	word program_counter{ 0x00 };

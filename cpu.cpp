@@ -36,30 +36,100 @@ void CPU::run()
 		// decode();
 		switch (opcode)
 		{
+			// ADC
+			case 0x69: doADC(get_Immediate());	break;
+			case 0x65: doADC(get_ZeroPage());	break;
+			case 0x75: doADC(get_ZeroPageX());	break;
+			case 0x6d: doADC(get_Absolute());	break;
+			case 0x7d: doADC(get_AbsoluteX());	break;
+			case 0x79: doADC(get_AbsoluteY());	break;
+			case 0x61: doADC(get_IndirectX());	break;
+			case 0x71: doADC(get_IndirectY());	break;
+
+			// AND
+			case 0x29: doAND(get_Immediate());	break;
+			case 0x25: doAND(get_ZeroPage());	break;
+			case 0x35: doAND(get_ZeroPageX());	break;
+			case 0x2d: doAND(get_Absolute());	break;
+			case 0x3d: doAND(get_AbsoluteX());	break;
+			case 0x39: doAND(get_AbsoluteY());	break;
+			case 0x21: doAND(get_IndirectX());	break;
+			case 0x31: doAND(get_IndirectY());	break;
+
+			// ASL
+			case 0x0a: doAND(get_Accumulator());break;
+			case 0x06: doAND(get_ZeroPage());	break;
+			case 0x16: doAND(get_ZeroPageX());	break;
+			case 0x0e: doAND(get_Absolute());	break;
+			case 0x1e: doAND(get_AbsoluteX());	break;
+
+			// (Branches) BCC, BCS, BEQ, BMI, BNE, BVC, BVS
+			case 0x90: doBCC(get_Immediate());	break;
+			case 0xb0: doBCS(get_Immediate());	break;
+			case 0xf0: doBEQ(get_Immediate());	break;
+			case 0x30: doBMI(get_Immediate());	break;
+			case 0xd0: doBNE(get_Immediate());	break;
+			case 0x10: doBPL(get_Immediate());	break;
+			case 0x50: doBVC(get_Immediate());	break;
+			case 0x70: doBVS(get_Immediate());	break;
+
+			// BIT
+			case 0x24: doBIT(get_ZeroPage());	break;
+			case 0x2c: doBIT(get_Absolute());	break;
+
+			// BRK
+			case 0x00: doBRK();					break;
+
+			// (Clears) CLC, CLD, CLI, CLV 
+			case 0x18: doCLC();					break;
+			case 0xd8: doCLD();					break;
+			case 0x58: doCLI();					break;
+			case 0xb8: doCLV();					break;			
+
+			// CMP
+			case 0xc9: doCMP(get_Immediate());	break;
+			case 0xc5: doCMP(get_ZeroPage());	break;
+			case 0xd5: doCMP(get_ZeroPageX());	break;
+			case 0xcd: doCMP(get_Absolute());	break;
+			case 0xdd: doCMP(get_AbsoluteX());	break;
+			case 0xd9: doCMP(get_AbsoluteY());	break;
+			case 0xc1: doCMP(get_IndirectX());	break;
+			case 0xd1: doCMP(get_IndirectY());	break;
+
+			// CPX
+			case 0xe0: doCMX(get_Immediate());	break;
+			case 0xe4: doCMX(get_ZeroPage());	break;
+			case 0xec: doCMX(get_Absolute());	break;
+
+			// CPY
+			case 0xc0: doCMY(get_Immediate());	break;
+			case 0xc4: doCMY(get_ZeroPage());	break;
+			case 0xcc: doCMY(get_Absolute());	break;
+
 			// INC
 			case 0xe6:
 			case 0xf6:
 			case 0xee:
 			case 0xff:
 			{
-				byte data{ getDataForINC(opcode) };
-				setZeroAndNegativeFlags(data);
+				//byte data{ getDataForINC(opcode) };
+				//setZeroAndNegativeFlags(data);
 				break;
 			}
 
 			// INX
 			case 0xe8:
 			{
-				byte data{ ++reg_x };
-				setZeroAndNegativeFlags(data);
+				//byte data{ ++reg_x };
+				//setZeroAndNegativeFlags(data);
 				break;
 			}
 
 			// INY
 			case 0xc8:
 			{
-				byte data{ ++reg_y };
-				setZeroAndNegativeFlags(data);
+				//byte data{ ++reg_y };
+				//setZeroAndNegativeFlags(data);
 				break;
 			}
 			
@@ -67,9 +137,11 @@ void CPU::run()
 			case 0x4c:
 			case 0x6c:
 			{
-				program_counter = getDataForJMP(opcode);
+				//program_counter = getDataForJMP(opcode);
 				break;
 			}
+
+			// JSR - skip for now
 
 			// LDA
 			case 0xa9:
@@ -81,9 +153,9 @@ void CPU::run()
 			case 0xa1:
 			case 0xb1:
 			{
-				byte data{ getDataForLDA(opcode) };
-				reg_accumulator = data;
-				setZeroAndNegativeFlags(data);
+				//byte data{ getDataForLDA(opcode) };
+				//reg_accumulator = data;
+				//setZeroAndNegativeFlags(data);
 
 				break;
 			}
@@ -92,56 +164,402 @@ void CPU::run()
 	}
 }
 
-word CPU::getDataForJMP(const byte opcode)
+/*	ADC - Add with Carry
+* 
+	This instruction adds the contents of a memory location to the accumulator together with the carry bit. 
+	If overflow occurs the carry bit is set, this enables multiple byte addition to be performed.
+*/
+void CPU::doADC(byte& data)
 {
-	switch (opcode)
-	{
-		case 0x4c: return getAddr_Absolute();
-		case 0x6c: return getAddr_Indirect();
-	}
-}
-
-byte CPU::getDataForINC(const byte opcode)
-{
-	switch (opcode)
-	{
-		case 0xe6: return ++memory[getAddr_ZeroPage()];
-		case 0xf6: return ++memory[getAddr_ZeroPageX()];
-		case 0xee: return ++memory[getAddr_Absolute()];
-		case 0xff: return ++memory[getAddr_AbsoluteX()];
-	}
+	reg_accumulator = getSumAsByte(data, reg_accumulator, true);	
+	setZeroAndNegativeFlags(reg_accumulator);	
 }
 
 
-byte CPU::getDataForLDA(const byte opcode)
+/*	AND - Logical AND
+* 
+	A logical AND is performed, bit by bit, on the accumulator contents using the contents of a byte of memory.
+*/
+void CPU::doAND(byte& data)
 {
-	switch (opcode)
+	reg_accumulator &= data;
+	setZeroAndNegativeFlags(reg_accumulator);
+}
+
+
+/*	ASL - Arithmetic Shift Left
+* 
+	This operation shifts all the bits of the accumulator or memory contents one bit left. 
+	Bit 0 is set to 0 and bit 7 is placed in the carry flag. 
+	The effect of this operation is to multiply the memory contents by 2 (ignoring 2's complement considerations), 
+	setting the carry if the result will not fit in 8 bits.
+*/
+void CPU::doASL(byte& data)
+{
+	setFlag(C, (data & 0b1000'0000) != 0);
+	data <<= 1;
+	setZeroAndNegativeFlags(data);
+}
+
+
+/*	BCC - Branch if Carry Clear
+*
+	If the carry flag is clear then add the relative displacement to the program counter 
+	to cause a branch to a new location.
+*/
+void CPU::doBCC(byte& data)
+{
+	if (!isFlagSet(C))
 	{
-		case 0xa9: return getAddr_Immediate();
-		case 0xa5: return memory[getAddr_ZeroPage()];
-		case 0xb5: return memory[getAddr_ZeroPageX()];
-		case 0xad: return memory[getAddr_Absolute()];
-		case 0xbd: return memory[getAddr_AbsoluteX()];
-		case 0xb9: return memory[getAddr_AbsoluteY()];
-		case 0xa1: return memory[getAddr_IndirectX()];
-		case 0xb1: return memory[getAddr_IndirectY()];
+		program_counter = getSumAsWord(program_counter, data);
 	}
 }
 
 
-byte CPU::getAddr_Immediate()
+/*	BCS - Branch if Carry Set
+*
+	If the carry flag is set then add the relative displacement to the program counter
+	to cause a branch to a new location.
+*/
+void CPU::doBCS(byte& data)
+{
+	if (isFlagSet(C))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BEQ - Branch if Equal
+*
+	If the zero flag is set then add the relative displacement to the program counter
+	to cause a branch to a new location.
+*/
+void CPU::doBEQ(byte& data)
+{
+	if (isFlagSet(Z))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BIT - Bit Test
+*
+	This instructions is used to test if one or more bits are set in a target memory location. 
+	The mask pattern in A is ANDed with the value in memory to set or clear the zero flag, 
+	but the result is not kept. Bits 7 and 6 of the value from memory are copied into the N and V flags.
+*/
+void CPU::doBIT(byte& data)
+{
+	byte result{ reg_accumulator & data };
+
+	if (result == 0)
+	{
+		setFlag(Z, true);
+	}
+	
+	setFlag(N, (data & 0b1000'0000) != 0);
+	setFlag(V, (data & 0b0100'0000) != 0);
+}
+
+
+/*	BMI - Branch if Minus
+*
+	If the negative flag is set then add the relative displacement to the program counter 
+	to cause a branch to a new location.
+*/
+void CPU::doBMI(byte& data)
+{
+	if (isFlagSet(N))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BNE - Branch if Not Equal
+*
+	If the zero flag is clear then add the relative displacement to the program counter 
+	to cause a branch to a new location.
+*/
+void CPU::doBNE(byte& data)
+{
+	if (!isFlagSet(Z))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BPL - Branch if Positive
+*
+	If the negative flag is clear then add the relative displacement to the program counter
+	to cause a branch to a new location.
+*/
+void CPU::doBPL(byte& data)
+{
+	if (!isFlagSet(N))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BRK - Force Interrupt
+*
+	The BRK instruction forces the generation of an interrupt request. 
+	The program counter and processor status are pushed on the stack 
+	then the IRQ interrupt vector at $FFFE/F is loaded into the PC and the break flag in the status set to one.
+*/
+void CPU::doBRK()
+{
+	// Push program_counter and processor_status onto stack.
+	// Load word at $FFFE/F into program_counter.
+
+	setFlag(B, true);
+}
+
+
+/*	BVC - Branch if Overflow Clear
+*
+	If the overflow flag is clear then add the relative displacement to the program counter
+	to cause a branch to a new location.
+*/
+void CPU::doBVC(byte& data)
+{
+	if (!isFlagSet(V))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	BVS - Branch if Overflow Set
+*
+	If the overflow flag is set then add the relative displacement to the program counter
+	to cause a branch to a new location.
+*/
+void CPU::doBVS(byte& data)
+{
+	if (isFlagSet(V))
+	{
+		program_counter = getSumAsWord(program_counter, data);
+	}
+}
+
+
+/*	CLC - Clear Carry Flag
+*
+	Set the carry flag to zero.
+*/
+void CPU::doCLC()
+{
+	setFlag(C, false);
+}
+
+
+/*	CLD - Clear Decimal Mode
+*
+	Set the decimal mode flag to zero.
+
+	NB: The state of the decimal flag is uncertain when the CPU is powered up and it is not reset 
+	when an interrupt is generated. In both cases you should include an explicit CLD to ensure that 
+	the flag is cleared before performing addition or subtraction.
+*/
+void CPU::doCLD()
+{
+	setFlag(D, false);
+}
+
+
+/*	CLI - Clear Interrupt Disable
+*
+	Clears the interrupt disable flag allowing normal interrupt requests to be serviced.
+*/
+void CPU::doCLI()
+{
+	setFlag(I, false);
+}
+
+
+/*	CLV - Clear Overflow Flag
+*
+	Clears the overflow flag.
+*/
+void CPU::doCLV()
+{
+	setFlag(V, false);
+}
+
+
+/*	CMP - Compare
+*
+	This instruction compares the contents of the accumulator with another 
+	memory held value and sets the zero and carry flags as appropriate.
+*/
+void CPU::doCMP(byte& data)
+{
+	if (reg_accumulator >= data)
+	{
+		setFlag(C, true);
+	}
+
+	if (reg_accumulator == data)
+	{
+		setFlag(Z, true);
+	}
+	
+	// get result from binary subtraction.
+	// if ((result & 0b1000'0000) != 0)
+	// {
+	//		setFlag(N, true);
+	// }
+}
+
+
+/*	CPX - Compare X Register
+*
+	This instruction compares the contents of the X register with another
+	memory held value and sets the zero and carry flags as appropriate.
+*/
+void CPU::doCMX(byte& data)
+{
+	if (reg_x >= data)
+	{
+		setFlag(C, true);
+	}
+
+	if (reg_x == data)
+	{
+		setFlag(Z, true);
+	}
+
+	// get result from binary subtraction.
+	// if ((result & 0b1000'0000) != 0)
+	// {
+	//		setFlag(N, true);
+	// }
+}
+
+
+/*	CPY - Compare Y Register
+*
+	This instruction compares the contents of the Y register with another
+	memory held value and sets the zero and carry flags as appropriate.
+*/
+void CPU::doCMY(byte& data)
+{
+	if (reg_y >= data)
+	{
+		setFlag(C, true);
+	}
+
+	if (reg_y == data)
+	{
+		setFlag(Z, true);
+	}
+
+	// get result from binary subtraction.
+	// if ((result & 0b1000'0000) != 0)
+	// {
+	//		setFlag(N, true);
+	// }
+}
+
+
+/*
+
+	GET DATA FROM MEMORY
+
+*/
+
+
+byte& CPU::get_Immediate()
+{
+	return memory[getAddr_Immediate()];
+}
+
+
+byte& CPU::get_ZeroPage()
+{
+	return memory[getAddr_ZeroPage()];
+}
+
+
+byte& CPU::get_ZeroPageX()
+{
+	return memory[getAddr_ZeroPageX()];
+}
+
+
+byte& CPU::get_ZeroPageY()
+{
+	return memory[getAddr_ZeroPageY()];
+}
+
+
+byte& CPU::get_Absolute()
+{
+	return memory[getAddr_Absolute()];
+}
+
+
+byte& CPU::get_AbsoluteX()
+{
+	return memory[getAddr_AbsoluteX()];
+}
+
+
+byte& CPU::get_AbsoluteY()
+{
+	return memory[getAddr_AbsoluteY()];
+}
+
+
+byte& CPU::get_IndirectX()
+{
+	return memory[getAddr_IndirectX()];
+}
+
+
+byte& CPU::get_IndirectY()
+{
+	return memory[getAddr_IndirectY()];
+}
+
+
+byte& CPU::get_Indirect()
+{
+	return memory[getAddr_Indirect()];
+}
+
+byte& CPU::get_Accumulator()
+{
+	return reg_accumulator;
+}
+
+
+/*
+
+	GET ADDRESSES
+
+*/
+
+
+word CPU::getAddr_Immediate()
+{
+	return program_counter++;
+}
+
+
+word CPU::getAddr_ZeroPage()
 {
 	return memory[program_counter++];
 }
 
 
-byte CPU::getAddr_ZeroPage()
-{
-	return memory[program_counter++];
-}
-
-
-byte CPU::getAddr_ZeroPageX()
+word CPU::getAddr_ZeroPageX()
 {
 	return getSumAsByte(memory[program_counter++], reg_x, false);
 }
@@ -230,13 +648,17 @@ word CPU::getAddr_Indirect()
 	return (i_hi << 8) | i_lo;
 }
 
+
 /*
-	Binary arithmetic
+
+	BINARY ARITHMETIC
+
 */
 
-byte CPU::getSumAsByte(byte a, byte b, bool use_carry_flag)
+
+byte CPU::getSumAsByte(byte a, byte b, bool use_flags)
 {
-	byte carry{ (use_carry_flag ? static_cast<byte>(processor_status & (1 << C)) : static_cast<byte>(0)) };
+	byte carry{ (use_flags ? static_cast<byte>(processor_status & (1 << C)) : static_cast<byte>(0)) };
 	byte result{ 0x00 };
 
 	for (size_t i{ 0 }; i < 8; ++i)
@@ -246,23 +668,27 @@ byte CPU::getSumAsByte(byte a, byte b, bool use_carry_flag)
 
 		// Full Adder.
 		byte sum = carry ^ (x ^ y);
-		carry = (x & y) + (y & carry) + (x & carry);
+		carry = (x & y) | (y & carry) | (x & carry);
 		result |= (sum << i);
-
-		// Set overflow.
-		if (i == 7 && carry)
-		{
-			setFlag(V, true);
-		}
 	}
 
-	// Set carry flag.
-	if (use_carry_flag)
+	std::cout << "\n\nAdd bytes:\n";
+	std::cout << std::bitset<8>(a) << '\n';
+	std::cout << std::bitset<8>(b) << '\n';
+	std::cout << std::bitset<8>(result) << '\n';
+
+	// Set flags.
+	if (use_flags)
 	{
+		// Carry flag - set if carry-out has a value.
 		setFlag(C, carry > 0);
+	
+		// Overflow flag - checks if MSB of starting values is different from result.
+		bool had_overflow{ (a ^ result) & (b ^ result) & 0b1000'000 };
+		setFlag(V, had_overflow);
+		
+		std::cout << "Carry: " << carry << " | Overflow? " << had_overflow << std::endl;
 	}
-
-	std::cout << "Add bytes: (bits) " << std::bitset<8>(result) << " | (hex) " << std::hex << (int)result << std::endl;
 
 	return result;
 }
@@ -289,18 +715,43 @@ word CPU::getSumAsWord(word a, word b)
 	return result;
 }
 
-word CPU::getSumAsWord(word a, byte b) {	return getSumAsWord(a, static_cast<word>(b)); }
-word CPU::getSumAsWord(byte a, word b) {	return getSumAsWord(static_cast<word>(a), b); }
-word CPU::getSumAsWord(byte a, byte b) {	return getSumAsWord(static_cast<word>(a), static_cast<word>(b)); }
+
+word CPU::getSumAsWord(word a, byte b) { return getSumAsWord(a, static_cast<word>(b)); }
+word CPU::getSumAsWord(byte a, word b) { return getSumAsWord(static_cast<word>(a), b); }
+word CPU::getSumAsWord(byte a, byte b) { return getSumAsWord(static_cast<word>(a), static_cast<word>(b)); }
+
+
+/*
+
+	PROCESSOR STATUS (FLAGS) 
+
+*/
 
 
 void CPU::setZeroAndNegativeFlags(byte data)
 {
-	setFlag(Z, data == 0);
-	setFlag(N, data & 0b1000'0000);
+	//setFlag(Z, data == 0);
+	//setFlag(N, data & 0b1000'0000);
+
+	if (data == 0) 
+	{
+		setFlag(Z, true);
+	}
+
+	if ((data & 0b1000'0000) != 0) 
+	{
+		setFlag(N, true);
+	}
 }
+
 
 void CPU::setFlag(byte flag_idx, bool value)
 {
 	processor_status = (value ? processor_status | (1 << flag_idx) : processor_status & ~(1 << flag_idx));
+}
+
+
+bool CPU::isFlagSet(byte flag_idx) const
+{
+	return ((processor_status & (1 << flag_idx)) != 0);
 }
