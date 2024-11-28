@@ -29,9 +29,7 @@ void CPU::run()
 	while (program_counter < memory.size())
 	{
 		// fetch();
-		byte opcode = memory[program_counter];
-		++program_counter;
-
+		byte opcode = memory[program_counter++];
 
 		// decode();
 		switch (opcode)
@@ -136,7 +134,7 @@ void CPU::run()
 			case 0x4c: doJMP(getAddr_Absolute());	break;
 			case 0x6c: doJMP(getAddr_Indirect());	break;
 
-			// JSR - skip for now
+			// TODO: JSR
 
 			// LDA - Load Accumulator
 			case 0xa9: doLDA(get_Immediate());		break;
@@ -161,9 +159,58 @@ void CPU::run()
 			case 0xb4: doLDY(get_ZeroPageX());		break;
 			case 0xac: doLDY(get_Absolute());		break;
 			case 0xbc: doLDY(get_AbsoluteX());		break;
-			
 
+			// LSR - Logical Shift Right
+			case 0x4a: doLDY(get_Accumulator());	break;
+			case 0x46: doLDY(get_ZeroPage());		break;
+			case 0x56: doLDY(get_ZeroPageX());		break;
+			case 0x4e: doLDY(get_Absolute());		break;
+			case 0x5e: doLDY(get_AbsoluteX());		break;
+			
+			// ORA - Logical Inclusive OR			
+			case 0x09: doORA(get_Immediate());		break;
+			case 0x05: doORA(get_ZeroPage());		break;
+			case 0x15: doORA(get_ZeroPageX());		break;
+			case 0x0d: doORA(get_Absolute());		break;
+			case 0x1d: doORA(get_AbsoluteX());		break;
+			case 0x19: doORA(get_AbsoluteY());		break;
+			case 0x01: doORA(get_IndirectX());		break;
+			case 0x11: doORA(get_IndirectY());		break;
+
+			// TODO: PHA
+			// TODO: PHP
+			// TODO: PLA
+			// TODO: PLP
+
+			// ROL - Rotate Left
+			case 0x2a: doROL(get_Accumulator());	break;
+			case 0x26: doROL(get_ZeroPage());		break;
+			case 0x36: doROL(get_ZeroPageX());		break;
+			case 0x2e: doROL(get_Absolute());		break;
+			case 0x3e: doROL(get_AbsoluteX());		break;
+
+			// ROR - Rotate Right
+			case 0x6a: doROR(get_Accumulator());	break;
+			case 0x66: doROR(get_ZeroPage());		break;
+			case 0x76: doROR(get_ZeroPageX());		break;
+			case 0x6e: doROR(get_Absolute());		break;
+			case 0x7e: doROR(get_AbsoluteX());		break;
+
+			// TODO: RTI
+			// TODO: RTS
+
+			// SBC - Subtract with Carry
+			case 0xe9: doSBC(get_Immediate());		break;
+			case 0xe5: doSBC(get_ZeroPage());		break;
+			case 0xf5: doSBC(get_ZeroPageX());		break;
+			case 0xed: doSBC(get_Absolute());		break;
+			case 0xfd: doSBC(get_AbsoluteX());		break;
+			case 0xf9: doSBC(get_AbsoluteY());		break;
+			case 0xe1: doSBC(get_IndirectX());		break;
+			case 0xf1: doSBC(get_IndirectY());		break;
 		}
+
+		// execute();
 	}
 }
 
@@ -572,7 +619,8 @@ void CPU::doEOR(byte& data)
 */
 void CPU::doINC(byte& data)
 {
-	data = addBytes(data, 0b0000'0001, false);
+	//data = addBytes(data, 0b0000'0001, false);
+	++data; // TODO: Is this ok???
 	setZeroAndNegativeFlags(data);
 }
 
@@ -652,6 +700,102 @@ void CPU::doLDY(byte& data)
 	setZeroAndNegativeFlags(data);
 }
 
+
+/*
+	LSR - Logical Shift Right
+
+	Each of the bits in A or M is shift one place to the right. 
+	The bit that was in bit 0 is shifted into the carry flag. Bit 7 is set to zero.
+*/
+void CPU::doLSR(byte& data)
+{
+	setFlag(C, (data & 0b0000'0001) != 0);
+	data >>= 1;
+	setZeroAndNegativeFlags(data);
+}
+
+
+/*
+	LSR - Logical Shift Right
+
+	Each of the bits in A or M is shift one place to the right.
+	The bit that was in bit 0 is shifted into the carry flag. Bit 7 is set to zero.
+*/
+void CPU::doLSR(byte& data)
+{
+	setFlag(C, (data & 0b0000'0001) != 0);
+	data >>= 1;
+	setZeroAndNegativeFlags(data);
+}
+
+
+/*
+	ORA - Logical Inclusive OR
+
+	An inclusive OR is performed, bit by bit, 
+	on the accumulator contents using the contents of a byte of memory.
+*/
+void CPU::doORA(byte& data)
+{
+	reg_accumulator = reg_accumulator | data;
+	setZeroAndNegativeFlags(data);
+}
+
+// TODO: PHA
+// TODO: PHP
+// TODO: PLA
+// TODO: PLP
+
+/*
+	ROL - Rotate Left
+
+	Move each of the bits in either A or M one place to the left. 
+	Bit 0 is filled with the current value of the carry flag whilst the old bit 7 becomes the new carry flag value.
+*/
+void CPU::doROL(byte& data)
+{
+	byte temp{ data & 0b1000'0000 };
+	data = (data << 1) | (isFlagSet(C) ? 0b0 : 0b1);
+
+	setFlag(C, temp != 0);
+
+	setZeroAndNegativeFlags(data);
+}
+
+
+/*
+	ROR - Rotate Right
+
+	Move each of the bits in either A or M one place to the right. 
+	Bit 7 is filled with the current value of the carry flag whilst the old bit 0 becomes the new carry flag value.
+*/
+void CPU::doROR(byte & data)
+{
+	byte temp{ data & 0b1 };
+	data = (data >> 1) | (isFlagSet(C) ? 0b0 : 0b1000'0000);
+
+	setFlag(C, temp != 0);
+
+	setZeroAndNegativeFlags(data);
+}
+
+
+// TODO: RTI
+// TODO: RTS
+
+
+/*
+	SBC - Subtract with Carry
+
+	This instruction subtracts the contents of a memory location to the accumulator 
+	together with the not of the carry bit. If overflow occurs the carry bit is clear, 
+	this enables multiple byte subtraction to be performed.
+*/
+void CPU::doSBC(byte& data)
+{
+	reg_accumulator = subtractBytes(reg_accumulator, data, true);
+	setZeroAndNegativeFlags(reg_accumulator);
+}
 
 
 #pragma endregion
@@ -786,7 +930,7 @@ word CPU::getAddr_ZeroPageX()
 
 word CPU::getAddr_ZeroPageY()
 {
-	//return addWords(memory[program_counter++], reg_y); not sure if the NB applies to this as well.
+	// TODO: return addWords(memory[program_counter++], reg_y); not sure if the NB applies to this as well.
 	return addBytes(memory[program_counter++], reg_y, false);
 }
 
@@ -915,12 +1059,16 @@ byte CPU::addBytes(byte a, byte b, bool use_flags)
 	// Set flags.
 	if (use_flags)
 	{
-		// Carry flag - set to the carry bit.
-		setFlag(C, carry > 0);
-	
-		// Overflow flag - checks if MSB of starting values is different from result.
+		// Overflow check: if MSB of starting values is different from result.
 		bool had_overflow{ (a ^ result) & (b ^ result) & 0b1000'000 };
-		setFlag(V, had_overflow);
+		if (had_overflow)
+		{
+			// Overflow flag - set if there was overflow.
+			setFlag(V, true);
+
+			// Carry flag - set if there was overflow.
+			setFlag(C, true);
+		}
 		
 		std::cout << "Carry: " << carry << " | Overflow? " << had_overflow << std::endl;
 	}
@@ -960,24 +1108,15 @@ byte CPU::subtractBytes(byte minuend, byte subtrahend, bool use_flags)
 {
 	byte initial_subtrahend{ subtrahend };
 
-	// Flip sign of subtrahend so that binary addition can be used.
-	// (e.g., minuend - subtrahend => minuend + -subtrahend).
-	// (e.g., minuend - -subtrahend => minuend + subtrahend).
-	// Find 2's complement if negative; Restore to positive if negative.
-	if (subtrahend & 0b1000'0000)
-	{
-		// Is negative. Make positive (undo 2's complement).
-		// Subtract 1 and get 1's complement.		
-		subtrahend = ~(subtrahend - 0b1);
-	}
-	else
-	{
-		// Is positive. Make negative (use 2's complement).
-		// Get 1's complement and add 1.
-		subtrahend = (~subtrahend) + 0b1;
-	}
+	// Flip subtrahend with 2's complement so that:
+	//	(minuend -  subtrahend) => (minuend + -subtrahend)
+	//  (minuend - -subtrahend) => (minuend +  subtrahend)
+	//subtrahend = ~(subtrahend - 0b1);
+	// TODO: Can carry bit be subtracted here?
+	byte carry_bit{ ~(use_flags ? (isFlagSet(C) ? 0b1 : 0b0) : 0b0) };
+	subtrahend = ~(subtrahend - 0b1) - carry_bit;
+	carry_bit = 0b0;
 
-	byte carry{ (use_flags ? static_cast<byte>(processor_status & (1 << C)) : static_cast<byte>(0x00)) };
 	byte result{ 0x0000 };
 
 	for (size_t i{ 0 }; i < 8; ++i)
@@ -986,8 +1125,8 @@ byte CPU::subtractBytes(byte minuend, byte subtrahend, bool use_flags)
 		byte y{ static_cast<byte>((subtrahend & (0b01 << i)) >> i) };
 
 		// Full Adder.
-		byte sum = carry ^ (x ^ y);
-		carry = (x & y) | (y & carry) | (x & carry);
+		byte sum = carry_bit ^ (x ^ y);
+		carry_bit = (x & y) | (y & carry_bit) | (x & carry_bit);
 		result |= (sum << i);
 	}
 
@@ -999,14 +1138,18 @@ byte CPU::subtractBytes(byte minuend, byte subtrahend, bool use_flags)
 	// Set flags.
 	if (use_flags)
 	{
-		// Carry flag - set to the carry bit.
-		setFlag(C, carry > 0);
+		// Overflow check: if MSB of starting values is different from result.
+		bool had_overflow{ (minuend ^ result) & (subtrahend ^ result) & 0b1000'000 };		
+		if (had_overflow)
+		{
+			// Overflow flag - set if there was overflow.
+			setFlag(V, true);			
+			
+			// Carry flag - clear if there was overflow.
+			setFlag(C, false);
+		}
 
-		// Overflow flag - checks if MSB of starting values is different from result.
-		//bool had_overflow{ (a ^ result) & (b ^ result) & 0b1000'000 };
-		//setFlag(V, had_overflow);
-
-		//std::cout << "Carry: " << carry << " | Overflow? " << had_overflow << std::endl;
+		std::cout << "Carry: " << carry_bit << " | Overflow? " << had_overflow << std::endl;
 	}
 
 	return result;
@@ -1015,20 +1158,11 @@ byte CPU::subtractBytes(byte minuend, byte subtrahend, bool use_flags)
 
 word CPU::subtractWords(word minuend, word subtrahend)
 {
-	// Flip subtrahend so that (minuend - subtrahend) => (minuend + (-subtrahend)).
-	// Find 2's complement if negative; Restore to positive if negative.
-	if (subtrahend & 0b1000'0000)
-	{
-		// Is negative. Make positive (undo 2's complement).
-		// Subtract 1 and get 1's complement.		
-		subtrahend = ~(subtrahend - 0b1);
-	}
-	else
-	{
-		// Is positive. Make negative (use 2's complement).
-		// Get 1's complement and add 1.
-		subtrahend = (~subtrahend) + 0b1;		
-	}
+	// Flip subtrahend with 2's complement so that:
+	//	(minuend -  subtrahend) => (minuend + -subtrahend)
+	//  (minuend - -subtrahend) => (minuend +  subtrahend)
+	//subtrahend = ~(subtrahend - 0b1);
+	// TODO: 
 
 	byte carry{ 0x00 };
 	word result{ 0x0000 };

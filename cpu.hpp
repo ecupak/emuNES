@@ -129,6 +129,17 @@ private:
 	void doLDA(byte& data);
 	void doLDX(byte& data);
 	void doLDY(byte& data);
+	void doLSR(byte& data);
+	void doORA(byte& data);
+	// TODO: PHA
+	// TODO: PHP
+	// TODO: PLA
+	// TODO: PLP	
+	void doROL(byte& data);
+	void doROR(byte& data);
+	// TODO: RTI
+	// TODO: RTS
+	void doSBC(byte& data);
 
 
 
